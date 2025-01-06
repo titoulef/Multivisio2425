@@ -70,7 +70,7 @@ def bbox_covering(bbox1, bbox2, threshold=0.05, type='center'):
             return False
         else:
             return True
-()
+
 
 def valisePersonne(frame, player_detection, suitcase_detection):
     lien_dict={}
@@ -84,13 +84,8 @@ def valisePersonne(frame, player_detection, suitcase_detection):
                         lien_dict[track_id] = track_id2
                         draw_bboxes_stream(frame, track_id, bbox, color)
                         draw_bboxes_stream(frame, track_id2, bbox2, color)
-                        cv2.line(frame, get_center(bbox), get_center(bbox2), color, 2)
                     elif track_id not in lien_dict and track_id2 not in lien_dict.values():
                         draw_bboxes_stream(frame, track_id, bbox, (255, 255, 255))
                         draw_bboxes_stream(frame, track_id2, bbox2, (255, 255, 255))
     return lien_dict
 
-
-def valisePersonneDist(player_detection, suitcase_detection, frame):
-    print("player_detection", player_detection)
-    return False

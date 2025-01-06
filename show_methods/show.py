@@ -3,8 +3,8 @@ import numpy as np
 
 import trackers
 from utils import bbox_utils, get_distance
-from map.map_detector import MapDetector
-from utils.bbox_utils import bbox_covering, valisePersonne, valisePersonneDist
+from mini_map import MiniMap, MapDetector
+from utils.bbox_utils import bbox_covering, valisePersonne
 
 
 def IdPersonn( input_video_path, fpsDivider, videoScale):
@@ -31,15 +31,16 @@ def IdPersonn( input_video_path, fpsDivider, videoScale):
             #suitcase_detection = suitcase_tracker.interpolate_suitcase_position(suitcase_detection)
             #draw bounding boxes
             lien = valisePersonne(frame, player_detection, suitcase_detection)
-            print("lien", lien)
 
+            #draw mini mini_map
+            frame = MiniMap(frame).draw_mini_map(frame)
 
             #draw keypoints
-            map = MapDetector()
-            map.add_keypoint((150, 370))
-            map.add_keypoint((500, 410))
-            map.add_keypoint((600, 310))
-            map.draw_keypoints(frame)
+            mapKey = MapDetector()
+            mapKey.add_keypoint((150, 370))
+            mapKey.add_keypoint((500, 410))
+            mapKey.add_keypoint((600, 310))
+            mapKey.draw_keypoints(frame)
 
             #draw lines between the player and the suitcase
 

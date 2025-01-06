@@ -3,10 +3,10 @@ import show_methods
 import cv2
 
 def main():
-    input_video_path = 'input_videos/air.mp4'
+    input_video_path = 'input_videos/airport.mp4'
 
     #show
-    show_methods.IdPersonn(input_video_path, fpsDivider=1, videoScale=0.25)
+    show_methods.IdPersonn(input_video_path, fpsDivider=4, videoScale=0.25)
 
 
 if __name__ == '__main__':
