@@ -33,7 +33,7 @@ def IdPersonn( input_video_path, fpsDivider, videoScale):
             lien = valisePersonne(frame, player_detection, suitcase_detection)
 
             #draw mini mini_map
-            frame = MiniMap(frame).draw_mini_map(frame)
+            #frame = MiniMap(frame).draw_mini_map(frame)
 
             #draw keypoints
             mapKey = MapDetector()

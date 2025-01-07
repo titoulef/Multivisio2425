@@ -3,7 +3,7 @@ import show_methods
 import cv2
 
 def main():
-    input_video_path = 'input_videos/ValiseTest.mp4'
+    input_video_path = ('input_videos/airport.mp4')
 
     #show
     show_methods.IdPersonn(input_video_path, fpsDivider=4, videoScale=0.25)
