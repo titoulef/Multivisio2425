@@ -18,12 +18,6 @@ class SuitcaseTracker:
         suitcase_positions = [{5:x} for x in df_suit_positions.to_numpy().tolist()]
         return suitcase_positions
 
-    def detect_frames_stream(self, frame):
-        suitcase_detection = []
-        suitcase_dict = self.detect_frame(frame)
-        suitcase_detection.append(suitcase_dict)
-        return suitcase_detection
-
     def detect_frame(self, frame):
         results = self.model.track(frame, persist=True, verbose=False)
         id_name_dict = results[0].names

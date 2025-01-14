@@ -1,12 +1,17 @@
-import Personn
+import personn
 
 class Population():
     def __init__(self):
-        self.pop = []
+        self.population = []
 
-    def addPerson(self, pos, ID, suitcase=False):
-        p=Personn.Personn(pos, ID, suitcase=False)
-        self.pop.append(p)
+    def addPerson(self, pers):
+        self.population.append(pers)
+
+    def __str__(self):
+        population_str = "\n".join(str(pers) for pers in self.population)
+        return f"Population:\n{population_str}" if self.population else "Population is empty."
+
+
 
 
 

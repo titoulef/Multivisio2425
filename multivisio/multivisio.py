@@ -7,7 +7,7 @@ from mini_map import MiniMap, MapDetector
 from utils.bbox_utils import bbox_covering, valisePersonne
 
 
-def IdPersonn( input_video_path, fpsDivider, videoScale):
+def loop( input_video_path, fpsDivider, videoScale):
     cameraIP = cv2.VideoCapture(input_video_path)
     player_tracker = trackers.PlayerTracker(model_path='yolov10n')
     suitcase_tracker = trackers.SuitcaseTracker(model_path='yolov10n')
@@ -20,27 +20,30 @@ def IdPersonn( input_video_path, fpsDivider, videoScale):
         ret, frame = cameraIP.read()
         if cpt % fpsDivider == 0:
             if not ret:
-                print("Erreur lecture frame (show.py)")
+                print("Erreur lecture frame (multivisio.py)")
 
             videoScale = float(videoScale)
             frame = cv2.resize(frame, None, fx=videoScale, fy=videoScale, interpolation=cv2.INTER_CUBIC)
 
-            player_detection = player_tracker.detect_frames_stream(frame)
-            suitcase_detection = suitcase_tracker.detect_frames_stream(frame)
+            player_detection_dict = player_tracker.detect_frame(frame)
+            suitcase_detection_dict = suitcase_tracker.detect_frame(frame)
             #interpolate the suitcase position
             #suitcase_detection = suitcase_tracker.interpolate_suitcase_position(suitcase_detection)
             #draw bounding boxes
-            lien = valisePersonne(frame, player_detection, suitcase_detection)
-
+            pop = valisePersonne(frame, player_detection_dict, suitcase_detection_dict)
+            #print(pop)
             #draw mini mini_map
-            #frame = MiniMap(frame).draw_mini_map(frame)
+            frame = MiniMap(frame).draw_mini_map(frame)
+
 
             #draw keypoints
             mapKey = MapDetector()
-            mapKey.add_keypoint((150, 370))
-            mapKey.add_keypoint((500, 410))
-            mapKey.add_keypoint((600, 310))
+            mapKey.add_keypoint((275, 205))
+            mapKey.add_keypoint((545, 205))
+            mapKey.add_keypoint((640, 335))
+            mapKey.add_keypoint((180, 320))
             mapKey.draw_keypoints(frame)
+
 
             #draw lines between the player and the suitcase
 

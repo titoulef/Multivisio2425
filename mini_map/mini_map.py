@@ -2,10 +2,11 @@ import cv2
 import sys
 
 import numpy as np
-from numpy.ma.core import shape
+from numpy.ma.core import shape, append
 from torchvision.utils import draw_keypoints
 
-from utils import get_center
+from utils import get_center, get_distance
+import personn
 
 sys.path.append('../')
 
@@ -21,6 +22,8 @@ class MiniMap():
         self.set_mini_map_position()
         self.set_map_drawing_key_points()
         self.set_map_lines()
+
+        #self.pop=pop
 
     #set le grand backround rect
     def set_canvas_background_box_position(self, frame):
@@ -68,8 +71,6 @@ class MiniMap():
         for line in self.lines:
             start_point = (int(self.draw_key_points[line[0]*2]), int(self.draw_key_points[line[0]*2+1]))
             end_point = (int(self.draw_key_points[line[1]*2]), int(self.draw_key_points[line[1]*2 + 1]))
-            print("s:", start_point)
-            print("e:", end_point)
             cv2.line(frame, start_point, end_point, (0, 0, 0), 1)
 
         return frame
@@ -84,12 +85,26 @@ class MiniMap():
         out[mask] = cv2.addWeighted(frame, alpha, shapes, 1 - alpha, 0)[mask]
         return out
 
+    """
+    def draw_people(self, frame, pop):
+        for pers in pop:
+            x, y = pers.convertBboxToMapCoord()
+            x +=self.map_start_x
+            y +=self.map_start_y
+            cv2.circle(frame, (x, y), 2, (255, 0, 0), -1)
+        return frame
+    """
+
     #draw la map final
     def draw_mini_map(self, frame):
         frame = self.draw_backround_rect(frame)
         frame = self.draw_map_lines(frame)
         frame = self.draw_map_key(frame)
+        #frame = self.draw_people(frame,self.pop)
         return frame
+
+
+
 
 
     #guetter
@@ -99,6 +114,13 @@ class MiniMap():
         return self.map_drawing_width
     def get_map_drawing_keypoints(self):
         return self.draw_key_points
+
+
+    def get_the_closest_keypoint_index(self, foot_position):
+        list=[]
+        for kp in self.draw_key_points:
+            list.append(get_distance(kp, foot_position))
+        return np.min(list)
 
     def convert_bounding_boxes_to_map_coordinates(self, player_boxes, suitcase_boxes, original_court_ket_points):
         player_heights = 1.80
@@ -110,7 +132,7 @@ class MiniMap():
             for player_id, bbox in player_bbox.items():
                 foot_position = get_center(bbox)
 
-                #get_the_closest_keypoint_index(foot_position)
+                self.get_the_closest_keypoint_index(foot_position)
 
 
 
