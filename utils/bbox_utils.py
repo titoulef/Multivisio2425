@@ -19,10 +19,6 @@ def get_center(bbox):
     cy=int(y2)
     return (cx, cy)
 
-def getXandY_from_a_origin(point, origin):
-    x0, y0 = origin
-    x, y = point
-    return x-x0, y-y0
 
 
 def get_distance(p1, p2):
@@ -174,6 +170,27 @@ def snapshop(frame, bbox, ID):
     x1, y1, x2, y2 = bbox
     cv2.imwrite("/ID_snapshots/ID"+str(ID)+".png", frame[int(y1):int(y2), int(x1):int(x2)])
 
+def get_the_closest_keypoint_index(point, keypoints, keypoint_indicees):
+    closest_distance = float('inf')
+    key_point_ind = keypoint_indicees[0]
+    for keypoint_indix in keypoint_indicees:
+        keypoint = keypoints[keypoint_indix*2], keypoints[keypoint_indix*2+1]
+        distance =  get_distance(point, keypoint)
+
+        if distance<closest_distance:
+            closest_distance = distance
+            key_point_ind = keypoint_indix
+
+    return key_point_ind
+
+def get_height_of_bbox(bbox):
+    x1, y1, x2, y2 = bbox
+    return y2-y1
+
+def measure_xy_distance(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+    return abs(x2-x1), abs(y2-y1)
 
 
 
