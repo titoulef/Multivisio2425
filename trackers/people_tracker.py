@@ -10,7 +10,6 @@ class PlayerTracker:
 
     def detect_frame(self, frame):
         results = self.model.track(frame, persist=True, verbose=False)
-
         id_name_dict = results[0].names
         player_dict = {}
         suitcase_dict = {}

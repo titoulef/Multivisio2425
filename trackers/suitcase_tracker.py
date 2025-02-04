@@ -8,15 +8,23 @@ class SuitcaseTracker:
         self.model = YOLO(model_path)
 
     def interpolate_suitcase_position(self, suitcase_positions):
-        suitcase_positions = [x.get(5, [np.nan, np.nan, np.nan, np.nan]) for x in suitcase_positions]        #convert the list into pandas dataframe
-        df_suit_positions=pd.DataFrame(suitcase_positions, columns=['x1', 'y1', 'x2', 'y2'])
-        #interpolate the missing values
-        df_suit_positions = df_suit_positions.interpolate()
-        df_suit_positions = df_suit_positions.bfill()
-        df_suit_positions = df_suit_positions.fillna(0)
-        #convert the dataframe into list
-        suitcase_positions = [{5:x} for x in df_suit_positions.to_numpy().tolist()]
+        # Extraire les positions pour la clé 5 de chaque frame
+        frames = list(suitcase_positions.keys())
+        positions = [suitcase_positions[frame][5] if isinstance(suitcase_positions[frame], dict) else [np.nan, np.nan, np.nan, np.nan] for frame in frames]
+
+        # Créer un DataFrame à partir des positions
+        df_positions = pd.DataFrame(positions, columns=['x1', 'y1', 'x2', 'y2'])
+
+        # Interpoler les valeurs manquantes
+        df_positions = df_positions.interpolate(method='linear')  # Interpolation linéaire
+        df_positions = df_positions.bfill()  # Remplissage vers l'arrière
+        df_positions = df_positions.fillna(0)  # Remplir tout reste avec 0
+
+        # Reconstruire le dictionnaire avec les données interpolées
+        for i, frame in enumerate(frames):
+            suitcase_positions[frame][5] = df_positions.iloc[i].tolist()
         return suitcase_positions
+
 
     def detect_frame(self, frame):
         results = self.model.track(frame, persist=True, verbose=False)

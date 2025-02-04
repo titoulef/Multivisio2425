@@ -1,2 +1,2 @@
-from .multivisio import loop
+from .multivisio import loop, loop2
 

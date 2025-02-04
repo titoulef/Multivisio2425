@@ -1,9 +1,7 @@
 import numpy as np
-from pandas.core.computation.expr import intersection
 import cv2
 import random
-import itertools
-
+import os
 from personn import Personn, Population
 
 
@@ -19,8 +17,6 @@ def get_center(bbox):
     cy=int(y2)
     return (cx, cy)
 
-
-
 def get_distance(p1, p2):
     x1, y1 = p1
     x2, y2 = p2
@@ -32,7 +28,7 @@ def draw_bboxes_stream(frame, track_id, bbox, color):
 
         cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
 
-def bbox_distance(bbox1, bbox2, threshold=0.2):
+def bbox_distance(bbox1, bbox2):
     c1=get_center(bbox1)
     c2=get_center(bbox2)
     distance = get_distance(c1, c2)
@@ -47,8 +43,6 @@ def bbox_covering(bbox1, bbox2, threshold=0.05, type='center'):
         y3-=delta
         x4+=delta
         y4+=delta
-
-
         # Ensure areas are positive
         area_personn = abs(x2 - x1) * abs(y2 - y1)
         area_suitcase = abs(x4 - x3) * abs(y4 - y3)
@@ -71,57 +65,12 @@ def bbox_covering(bbox1, bbox2, threshold=0.05, type='center'):
             return False
 
     elif type == 'center':
-        c1 = get_center(bbox1)
-        c2 = get_center(bbox2)
-
-        distance = get_distance(c1, c2)
+        distance = bbox_distance(bbox1, bbox2)
         if distance > 0.5 * (bbox1[3] - bbox1[1]):
             return False
         else:
             return True
 
-"""
-def valisePersonne(frame, player_dict, suitcase_dict):
-    lien_dict = {}
-    drawn_bboxes = set()  # Ensemble pour suivre les bboxes déjà dessinées
-
-
-    for track_id, data in player_dict.items():
-        bbox1 = data['bbox']
-        color = data['color']
-        linked = False  # Flag pour savoir si on a associé un joueur à une valise
-
-
-        for track_id2, bbox2 in suitcase_dict.items():
-            if bbox_covering(bbox1, bbox2, type='intersection'):
-                lien_dict[track_id] = track_id2
-
-                # Dessin des bboxes si elles ne l'ont pas encore été
-                if track_id not in drawn_bboxes:
-                    draw_bboxes_stream(frame, track_id, bbox1, color)
-                    drawn_bboxes.add(track_id)
-                if track_id2 not in drawn_bboxes:
-                    draw_bboxes_stream(frame, track_id2, bbox2, color)
-                    drawn_bboxes.add(track_id2)
-
-                linked = True  # Un lien a été trouvé
-                break  # On arrête la recherche pour ce joueur
-
-        # Si aucun lien trouvé, dessiner en blanc
-        if not linked:
-            if track_id not in drawn_bboxes:
-                draw_bboxes_stream(frame, track_id, bbox1, (255, 255, 255))
-                drawn_bboxes.add(track_id)
-
-    # Dessiner les valises non associées
-
-    for track_id2, bbox2 in suitcase_dict.items():
-        if track_id2 not in drawn_bboxes:
-            draw_bboxes_stream(frame, track_id2, bbox2, (255, 255, 255))
-            drawn_bboxes.add(track_id2)
-
-    return lien_dict
-"""
 
 def valisePersonne(frame, player_dict, suitcase_dict):
     lien_dict = {}
@@ -134,13 +83,16 @@ def valisePersonne(frame, player_dict, suitcase_dict):
 
 
         for track_id2, bbox2 in suitcase_dict.items():
-            if bbox_covering(bbox1, bbox2, type='intersection'):
+            if bbox_covering(bbox1, bbox2, type='center'):
                 lien_dict[track_id] = track_id2
 
                 # Dessin des bboxes si elles ne l'ont pas encore été
                 if track_id not in drawn_bboxes:
-                    #snapshop(frame, bbox1, track_id)
-                    population.addPerson(Personn(track_id, bbox1, snapshop=True))
+                    pers = Personn(track_id, bbox1, frame)
+                    pers.set_suitcase(bbox2, frame)
+
+                    population.addPerson(pers)
+
                     draw_bboxes_stream(frame, track_id, bbox1, color)
                     drawn_bboxes.add(track_id)
                 if track_id2 not in drawn_bboxes:
@@ -153,6 +105,7 @@ def valisePersonne(frame, player_dict, suitcase_dict):
         # Si aucun lien trouvé, dessiner en blanc
         if not linked:
             if track_id not in drawn_bboxes:
+                population.addPerson(Personn(track_id, bbox1, frame))
                 draw_bboxes_stream(frame, track_id, bbox1, (255, 255, 255))
                 drawn_bboxes.add(track_id)
 
@@ -167,8 +120,25 @@ def valisePersonne(frame, player_dict, suitcase_dict):
 
 
 def snapshop(frame, bbox, ID):
-    x1, y1, x2, y2 = bbox
-    cv2.imwrite("/ID_snapshots/ID"+str(ID)+".png", frame[int(y1):int(y2), int(x1):int(x2)])
+    # Extraire les coordonnées
+    x1, y1, x2, y2 = map(int, bbox)
+
+    # Vérifier si les coordonnées sont valides
+    if x1 < 0 or y1 < 0 or x2 > frame.shape[1] or y2 > frame.shape[0]:
+        raise ValueError("Les coordonnées bbox sont en dehors des limites de l'image.")
+
+    # Vérifier/créer le dossier de sauvegarde
+    output_dir = "ID_snapshots"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Extraire et sauvegarder le sous-image
+    snapshot = frame[y1:y2, x1:x2]
+    output_path = os.path.join(output_dir, f"ID{ID}.png")
+    success = cv2.imwrite(output_path, snapshot)
+
+    if not success:
+        raise IOError(f"Échec de la sauvegarde de l'image dans {output_path}")
 
 def get_the_closest_keypoint_index(point, keypoints, keypoint_indicees):
     closest_distance = float('inf')

@@ -16,15 +16,13 @@ class MiniMap():
         # map placer en haut à droite par default, voir set_canvas_background_box_position
         self.draw_rect_width = 150
         self.draw_rect_height = 150
-        self.buffer=10 #marge autour du background
-        self.padding_map=5 #marge autour de map dans le backround
+        self.buffer=20 #marge autour du background
+        self.padding_map=15 #marge autour de map dans le backround
 
         self.set_canvas_background_box_position(frame)
         self.set_mini_map_position()
         self.set_map_drawing_key_points()
         self.set_map_lines()
-
-
 
         #self.pop=pop
 
@@ -66,43 +64,6 @@ class MiniMap():
         self.map_end_x = self.end_x - self.padding_map
         self.map_end_y = self.end_y - self.padding_map
         self.map_drawing_width = self.map_end_x - self.map_start_x
-
-    def get_mini_court_coordinates(self, object_position,
-                                   closest_key_point,
-                                   closest_key_point_index,
-                                   player_height_in_pixels,
-                                   player_height_in_meters
-                                   ):
-        distance_from_keypoint_x_pixels, distance_from_keypoint_y_pixels = utils.measure_xy_distance(object_position, closest_key_point)
-
-        #convertir en mètres
-        distance_from_keypoint_x_meters = utils.convert_pixels_to_meters(distance_from_keypoint_x_pixels,
-                                                                        player_height_in_meters,
-                                                                        player_height_in_pixels
-                                                                        )
-        distance_from_keypoint_y_meters = utils.convert_pixels_to_meters(distance_from_keypoint_y_pixels,
-                                                                         player_height_in_meters,
-                                                                         player_height_in_pixels
-                                                                         )
-        #convert to mini map coordinates
-        mini_court_x_distance_pixels = utils.convert_meters_to_pixel_distance(distance_from_keypoint_x_meters, constants.PLAYER_HEIGHT, player_height_in_pixels )
-        mini_court_y_distance_pixels = utils.convert_meters_to_pixel_distance(distance_from_keypoint_y_meters, constants.PLAYER_HEIGHT, player_height_in_pixels )
-        closest_mini_map_keypoint = (self.draw_key_points[closest_key_point_index*2],
-                                     self.draw_key_points[closest_key_point_index*2+1])
-
-        mini_court_player_position = (closest_mini_map_keypoint[0] + mini_court_x_distance_pixels,
-                                        closest_mini_map_keypoint[1] + mini_court_y_distance_pixels)
-
-        if mini_court_player_position[0] < self.map_start_x-self.padding_map:
-            mini_court_player_position = (self.map_start_x- self.padding_map, mini_court_player_position[1])
-        if mini_court_player_position[0] > self.map_end_x+self.padding_map:
-            mini_court_player_position = (self.map_end_x+self.padding_map, mini_court_player_position[1])
-        if mini_court_player_position[1] < self.map_start_y-self.padding_map:
-            mini_court_player_position = (mini_court_player_position[0], self.map_start_y-self.padding_map)
-        if mini_court_player_position[1] > self.map_end_y+self.padding_map:
-            mini_court_player_position = (mini_court_player_position[0], self.map_end_y+self.padding_map)
-
-        return mini_court_player_position
 
     def draw_map_key(self, frame):
         for i in range(0, len(self.draw_key_points), 2):
@@ -146,16 +107,7 @@ class MiniMap():
     def get_map_drawing_keypoints(self):
         return self.draw_key_points
 
-    def get_the_closest_keypoint_index(self, foot_position):
-        list=[]
-        for kp in self.draw_key_points:
-            list.append(get_distance(kp, foot_position))
-        return np.min(list)
-
-    """
-    def convert_bounding_boxes_to_map_coordinates(self, player_boxes, suitcase_boxes, original_court_ket_points):
-        player_heights = constants.PLAYER_HEIGHT
-
+    def convert_bounding_boxes_to_map_coordinates(self, frame, player_boxes, suitcase_boxes, keypoints, print=False):
         output_suitcase_bboxes_dict = {}
         output_player_bboxes_dict = {}
         for player_id, data in player_boxes.items():
@@ -163,45 +115,38 @@ class MiniMap():
             color = data['color']
             foot_position = get_center(bbox)
 
-            closest_key_point_index = utils.get_the_closest_keypoint_index(foot_position, original_court_ket_points, [0,1,2,3])
-            closest_key_point = (original_court_ket_points[closest_key_point_index*2],
-                                 original_court_ket_points[closest_key_point_index*2+1])
-            print(player_id, closest_key_point_index)
-            max_player_height_in_pixels = get_height_of_bbox(bbox)
-
-            mini_map_player_position = self.get_mini_court_coordinates(foot_position,
-                                                                        closest_key_point,
-                                                                        closest_key_point_index,
-                                                                        max_player_height_in_pixels,
-                                                                        player_heights
-                                                                        )
-            output_player_bboxes_dict[player_id] = mini_map_player_position
-
-        return output_player_bboxes_dict, output_suitcase_bboxes_dict
-    """
-    def convert_bounding_boxes_to_map_coordinates(self, frame, player_boxes, suitcase_boxes, keypoints):
-
-        output_suitcase_bboxes_dict = {}
-        output_player_bboxes_dict = {}
-        for player_id, data in player_boxes.items():
-            bbox = data['bbox']
-            color = data['color']
-            foot_position = get_center(bbox)
-
-            ratioh, ratiov, = utils.get_axes_x_y_intersection_segments(frame, foot_position, keypoints, print=True)
-            if ratioh is not None or ratiov is not None:
-                output_player_bboxes_dict[player_id] = (int(self.map_start_x+ratioh*self.draw_rect_width), int(self.map_start_y+ratiov*self.draw_rect_height))
+            ratioh, ratiov = utils.get_axes_x_y_intersection_ratio(frame, foot_position, keypoints, print)
+            if ratioh is not None and ratiov is not None:
+                output_player_bboxes_dict[player_id] = (int(self.map_start_x+ratioh*(self.draw_rect_width-2*self.padding_map)), int(self.map_start_y+ratiov*(self.draw_rect_height-2*self.padding_map)))
             else:
                 output_player_bboxes_dict[player_id] = None
-        return output_player_bboxes_dict, output_suitcase_bboxes_dict
 
+        for suit_id, bbox in suitcase_boxes.items():
+            suit_position = get_center(bbox)
+
+            ratioh, ratiov = utils.get_axes_x_y_intersection_ratio(frame, suit_position, keypoints, print)
+            if ratioh is not None and ratiov is not None:
+                output_suitcase_bboxes_dict[suit_id] = (int(self.map_start_x+ratioh*(self.draw_rect_width-2*self.padding_map)), int(self.map_start_y+ratiov*(self.draw_rect_height-2*self.padding_map)))
+            else:
+                output_suitcase_bboxes_dict[suit_id] = None
+
+        return output_player_bboxes_dict, output_suitcase_bboxes_dict
 
     def draw_pints_on_mini_map(self, frame, pos, colors=(255, 0, 0)):
         for id, position in pos.items():
             if position is not None:
-                x=int(position[0])
-                y=int(position[1])
-                cv2.circle(frame, (x, y), 2, colors, -1)
-                cv2.putText(frame, f"ID: {id}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.2,
-                            (255, 255, 255), 1)
+                x = int(position[0])
+                y = int(position[1])
+
+                if x < self.map_start_x - self.padding_map:
+                    position = (self.map_start_x - self.padding_map, y)
+                if x > self.map_end_x + self.padding_map:
+                    position = (self.map_end_x + self.padding_map, y)
+                if y < self.map_start_y - self.padding_map:
+                    position = (x, self.map_start_y - self.padding_map)
+                if y > self.map_end_y + self.padding_map:
+                    position = (x, self.map_end_y + self.padding_map)
+
+                cv2.circle(frame, position, 2, colors, -1)
+                #cv2.putText(frame, f"ID: {id}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.2, (255, 255, 255), 1)
         return frame
