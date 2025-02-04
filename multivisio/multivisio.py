@@ -5,6 +5,7 @@ import trackers
 from utils import bbox_utils, get_distance
 from mini_map import MiniMap, MapDetector
 from utils.bbox_utils import bbox_covering, valisePersonne
+from personn import Population
 
 def mouse_callback(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
@@ -23,6 +24,7 @@ def loop( input_video_path, fpsDivider, videoScale):
     cv2.namedWindow("output")
     cv2.setMouseCallback("output", mouse_callback)
     cpt = 0
+    population = Population()
     while True:
         ret, frame = cameraIP.read()
         if cpt % fpsDivider == 0:
@@ -44,16 +46,17 @@ def loop( input_video_path, fpsDivider, videoScale):
 
 
             #draw bounding boxes
-            pop = valisePersonne(frame, player_detection_dict, suitcase_detection_dict)
+            lien_dict = valisePersonne(frame, player_detection_dict, suitcase_detection_dict, population)
+
             # Convert bounding boxes to map coordinates
             player_mini_map_detections, suitcase_mini_map_detections = mini_map.convert_bounding_boxes_to_map_coordinates(
-                frame, player_detection_dict, suitcase_detection_dict, map_keypoints, print=True)
+                frame, player_detection_dict, suitcase_detection_dict, map_keypoints, lien_dict, print=False)
 
             #print(pop)
             #draw mini mini_map convert_bounding_boxes_to_map_coordinates
             frame = mini_map.draw_mini_map(frame)
-            frame = mini_map.draw_pints_on_mini_map(frame, player_mini_map_detections)
-            frame = mini_map.draw_pints_on_mini_map(frame, suitcase_mini_map_detections, colors=(255, 255, 0))
+            frame = mini_map.draw_pints_on_mini_mapD(frame, player_mini_map_detections, what='pers')
+            frame = mini_map.draw_pints_on_mini_mapD(frame, suitcase_mini_map_detections, what='suit')
 
             cv2.imshow("output", frame)
         cpt += 1

@@ -107,7 +107,7 @@ class MiniMap():
     def get_map_drawing_keypoints(self):
         return self.draw_key_points
 
-    def convert_bounding_boxes_to_map_coordinates(self, frame, player_boxes, suitcase_boxes, keypoints, print=False):
+    def convert_bounding_boxes_to_map_coordinates(self, frame, player_boxes, suitcase_boxes, keypoints, lien_dict, print=False):
         output_suitcase_bboxes_dict = {}
         output_player_bboxes_dict = {}
         for player_id, data in player_boxes.items():
@@ -117,22 +117,62 @@ class MiniMap():
 
             ratioh, ratiov = utils.get_axes_x_y_intersection_ratio(frame, foot_position, keypoints, print)
             if ratioh is not None and ratiov is not None:
-                output_player_bboxes_dict[player_id] = (int(self.map_start_x+ratioh*(self.draw_rect_width-2*self.padding_map)), int(self.map_start_y+ratiov*(self.draw_rect_height-2*self.padding_map)))
+                if player_id not in lien_dict.values() :
+                    color = (255, 255, 255)
+
+                point = (int(self.map_start_x + ratioh * (self.draw_rect_width - 2 * self.padding_map)),
+                 int(self.map_start_y + ratiov * (self.draw_rect_height - 2 * self.padding_map)))
+                output_player_bboxes_dict[player_id] = {'point': point, 'color': color}
             else:
-                output_player_bboxes_dict[player_id] = None
+                output_player_bboxes_dict[player_id] = {'point': None, 'color': None}
 
         for suit_id, bbox in suitcase_boxes.items():
             suit_position = get_center(bbox)
 
             ratioh, ratiov = utils.get_axes_x_y_intersection_ratio(frame, suit_position, keypoints, print)
             if ratioh is not None and ratiov is not None:
-                output_suitcase_bboxes_dict[suit_id] = (int(self.map_start_x+ratioh*(self.draw_rect_width-2*self.padding_map)), int(self.map_start_y+ratiov*(self.draw_rect_height-2*self.padding_map)))
+                if suit_id in lien_dict:
+                    player_id=lien_dict[suit_id]
+                    color=player_boxes[player_id]['color']
+                else:
+                    color=(255,255,255)
+
+                point = (int(self.map_start_x+ratioh*(self.draw_rect_width-2*self.padding_map)), int(self.map_start_y+ratiov*(self.draw_rect_height-2*self.padding_map)))
+                output_player_bboxes_dict[suit_id] = {'point': point, 'color': color}
             else:
-                output_suitcase_bboxes_dict[suit_id] = None
+                output_suitcase_bboxes_dict[suit_id] = {'point': None, 'color': None}
 
         return output_player_bboxes_dict, output_suitcase_bboxes_dict
 
-    def draw_pints_on_mini_map(self, frame, pos, colors=(255, 0, 0)):
+    def draw_pints_on_mini_mapD(self, frame, pos, what):
+        for id, data in pos.items():
+            position = data['point']
+            color = data['color']
+            if position is not None:
+                x = int(position[0])
+                y = int(position[1])
+
+                if x < self.map_start_x - self.padding_map:
+                    position = (self.map_start_x - self.padding_map, y)
+                if x > self.map_end_x + self.padding_map:
+                    position = (self.map_end_x + self.padding_map, y)
+                if y < self.map_start_y - self.padding_map:
+                    position = (x, self.map_start_y - self.padding_map)
+                if y > self.map_end_y + self.padding_map:
+                    position = (x, self.map_end_y + self.padding_map)
+
+                if what=='pers':
+                    cv2.circle(frame, position, 2, color, -1)
+                else:
+                    cv2.rectangle(frame,
+                                  (int(position[0] - 2), int(position[1] - 2)),  # Point supérieur gauche
+                                  (int(position[0] + 2), int(position[1] + 2)),  # Point inférieur droit
+                                  color,  # Couleur (B, G, R)
+                                  2)
+                #cv2.putText(frame, f"ID: {id}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.2, (255, 255, 255), 1)
+        return frame
+
+    def draw_pints_on_mini_map(self, frame, pos, colors, what):
         for id, position in pos.items():
             if position is not None:
                 x = int(position[0])
@@ -147,6 +187,6 @@ class MiniMap():
                 if y > self.map_end_y + self.padding_map:
                     position = (x, self.map_end_y + self.padding_map)
 
-                cv2.circle(frame, position, 2, colors, -1)
-                #cv2.putText(frame, f"ID: {id}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.2, (255, 255, 255), 1)
+
+                    #cv2.putText(frame, f"ID: {id}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.2, (255, 255, 255), 1)
         return frame

@@ -3,6 +3,7 @@ import cv2
 import random
 import os
 from personn import Personn, Population
+from personn.Suitcase import Suitcase
 
 
 def generate_random_color():
@@ -71,27 +72,21 @@ def bbox_covering(bbox1, bbox2, threshold=0.05, type='center'):
         else:
             return True
 
-
-def valisePersonne(frame, player_dict, suitcase_dict):
+def valisePersonne(frame, player_dict, suitcase_dict, population):
     lien_dict = {}
     drawn_bboxes = set()  # Ensemble pour suivre les bboxes déjà dessinées
-    population=Population()
     for track_id, data in player_dict.items():
         bbox1 = data['bbox']
         color = data['color']
         linked = False  # Flag pour savoir si on a associé un joueur à une valise
 
-
         for track_id2, bbox2 in suitcase_dict.items():
             if bbox_covering(bbox1, bbox2, type='center'):
-                lien_dict[track_id] = track_id2
-
+                lien_dict[track_id2] = track_id
                 # Dessin des bboxes si elles ne l'ont pas encore été
                 if track_id not in drawn_bboxes:
-                    pers = Personn(track_id, bbox1, frame)
-                    pers.set_suitcase(bbox2, frame)
-
-                    population.addPerson(pers)
+                    #pers = Personn(track_id, bbox1, frame, color)
+                    #population.addPerson(pers)
 
                     draw_bboxes_stream(frame, track_id, bbox1, color)
                     drawn_bboxes.add(track_id)
@@ -105,7 +100,7 @@ def valisePersonne(frame, player_dict, suitcase_dict):
         # Si aucun lien trouvé, dessiner en blanc
         if not linked:
             if track_id not in drawn_bboxes:
-                population.addPerson(Personn(track_id, bbox1, frame))
+                #population.addPerson(Personn(track_id, bbox1, frame, color))
                 draw_bboxes_stream(frame, track_id, bbox1, (255, 255, 255))
                 drawn_bboxes.add(track_id)
 
@@ -116,7 +111,7 @@ def valisePersonne(frame, player_dict, suitcase_dict):
             draw_bboxes_stream(frame, track_id2, bbox2, (255, 255, 255))
             drawn_bboxes.add(track_id2)
 
-    return population
+    return lien_dict
 
 
 def snapshop(frame, bbox, ID):
