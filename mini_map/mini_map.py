@@ -136,7 +136,6 @@ class MiniMap():
 
         return output_player_bboxes_dict, output_suitcase_bboxes_dict
 
-
     def draw_pints_on_mini_mapD(self, frame, pos, what):
         for id, data in pos.items():
             position = data['point']
@@ -145,14 +144,14 @@ class MiniMap():
                 x = int(position[0])
                 y = int(position[1])
 
-                if x < self.map_start_x - self.padding_map:
+                """if x < self.map_start_x - self.padding_map:
                     position = (self.map_start_x - self.padding_map, y)
                 if x > self.map_end_x + self.padding_map:
                     position = (self.map_end_x + self.padding_map, y)
                 if y < self.map_start_y - self.padding_map:
                     position = (x, self.map_start_y - self.padding_map)
                 if y > self.map_end_y + self.padding_map:
-                    position = (x, self.map_end_y + self.padding_map)
+                    position = (x, self.map_end_y + self.padding_map)"""
 
                 if what=='pers':
                     cv2.circle(frame, position, 3, color, -1)

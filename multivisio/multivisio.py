@@ -24,7 +24,8 @@ def loop( input_video_path, fpsDivider, videoScale):
     cv2.namedWindow("output")
     cv2.setMouseCallback("output", mouse_callback)
     cpt = 0
-    population = Population()
+
+    lien_dict = {}
     while True:
         ret, frame = cameraIP.read()
         if cpt % fpsDivider == 0:
@@ -46,8 +47,8 @@ def loop( input_video_path, fpsDivider, videoScale):
 
 
             #draw bounding boxes
-            lien_dict = associate_objects(player_detection_dict, suitcase_detection_dict)
-            drawBBOX(frame, player_detection_dict, suitcase_detection_dict)
+            lien_dict = associate_objects(player_detection_dict, suitcase_detection_dict, lien_dict)
+            drawBBOX(frame, player_detection_dict, suitcase_detection_dict, lien_dict)
 
             # Convert bounding boxes to map coordinates
             player_mini_map_detections, suitcase_mini_map_detections = mini_map.convert_bounding_boxes_to_map_coordinates(
@@ -87,7 +88,8 @@ def loop2(input_video_path1, input_video_path2, fpsDivider, videoScale):
     cv2.namedWindow("output1")
     cv2.namedWindow("output2")
     cv2.setMouseCallback("output1", mouse_callback)
-
+    lien_dict1 = {}
+    lien_dict2 = {}
     cpt = 0
     while True:
         ret1, frame1 = cameraIP1.read()
@@ -116,20 +118,23 @@ def loop2(input_video_path1, input_video_path2, fpsDivider, videoScale):
 
 
             #draw bounding boxes
-            pop1 = valisePersonne(frame1, player_detection_dict1, suitcase_detection_dict1)
-            pop2 = valisePersonne(frame2, player_detection_dict2, suitcase_detection_dict2)
+            lien_dict1 = associate_objects(player_detection_dict1, suitcase_detection_dict1, lien_dict1)
+            drawBBOX(frame1, player_detection_dict1, suitcase_detection_dict1, lien_dict1)
+            lien_dict2 = associate_objects(player_detection_dict2, suitcase_detection_dict2, lien_dict2)
+            drawBBOX(frame2, player_detection_dict2, suitcase_detection_dict2, lien_dict2)
+
 
 
             # Convert bounding boxes to map coordinates
             player_mini_map_detections, suitcase_mini_map_detections = mini_map.convert_bounding_boxes_to_map_coordinates(
-                frame1, player_detection_dict1, suitcase_detection_dict1, map_keypoints, print=True)
+                frame1, player_detection_dict1, suitcase_detection_dict1, map_keypoints, print=True, lien_dict=lien_dict1)
 
             #print(pop)
             #draw mini mini_map convert_bounding_boxes_to_map_coordinates
-            frame1 = mini_map.draw_mini_map(frame1)
-            frame1 = mini_map.draw_pints_on_mini_map(frame1, player_mini_map_detections)
+            """frame1 = mini_map.draw_mini_map(frame1)
+            frame1 = mini_map.draw_pints_on_mini_map(frame1, player_mini_map_detections, )
             frame1 = mini_map.draw_pints_on_mini_map(frame1, suitcase_mini_map_detections, colors=(255, 255, 0))
-
+"""
             cv2.imshow("output1", frame1)
             cv2.imshow("output2", frame2)
         cpt += 1

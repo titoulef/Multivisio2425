@@ -78,29 +78,30 @@ def draw_tracked_object(frame, track_id, bbox, color, drawn_bboxes):
         drawn_bboxes.add(track_id)
 
 
-def associate_objects(player_dict, suitcase_dict):
-    lien_dict = {}
+def associate_objects(player_dict, suitcase_dict, lien_dict_old):
+    lien_dict={}
     for player_id, player_data in player_dict.items():
         bbox1 = player_data['bbox']
         for suitcase_id, bbox2 in suitcase_dict.items():
             if bbox_covering(bbox1, bbox2, type='center'):
+
                 lien_dict[suitcase_id] = player_id
                 break  # Stop after first association
     return lien_dict
 
 
-def drawBBOX(frame, player_dict, suitcase_dict):
-    lien_dict = associate_objects(player_dict, suitcase_dict)
-    drawn_bboxes = set()
+def drawBBOX(frame, player_dict, suitcase_dict, lien_dict):
+    drawn_player_bboxes = set()
+    drawn_suitcase_bboxes = set()
 
     for player_id, player_data in player_dict.items():
         bbox = player_data['bbox']
         color = player_data['color'] if player_id in lien_dict.values() else (255, 255, 255)
-        draw_tracked_object(frame, player_id, bbox, color, drawn_bboxes)
+        draw_tracked_object(frame, player_id, bbox, color, drawn_player_bboxes)
 
-    for suitcase_id, bbox in suitcase_dict.items():
-        color = player_dict[lien_dict[suitcase_id]]['color'] if suitcase_id in lien_dict else (255, 255, 255)
-        draw_tracked_object(frame, suitcase_id, bbox, color, drawn_bboxes)
+    for suitcase_id, bbox_suit in suitcase_dict.items():
+        color = player_dict[lien_dict[suitcase_id]]['color']
+        draw_tracked_object(frame, suitcase_id, bbox_suit, color, drawn_suitcase_bboxes)
 
 
 def snapshop(frame, bbox, ID):

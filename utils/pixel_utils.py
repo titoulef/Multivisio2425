@@ -96,6 +96,14 @@ def get_axes_direct(keypoints):
     dir_right = (np.sin(phi_right), np.cos(phi_right))
     return dir_down, dir_up, dir_left, dir_right
 
+def is_between_vectors(A, B, V):
+    # Calcul des produits vectoriels
+    cross1 = A[0] * V[1] - A[1] * V[0]
+    cross2 = V[0] * B[1] - V[1] * B[0]
+
+    # Vérifie si les produits vectoriels ont le même signe
+    return cross1 * cross2 >= 0
+
 def intersection_droites_parametriques(p1, v1, p2, v2):
     """
     Trouve l'intersection de deux droites définies par :
@@ -159,7 +167,7 @@ def get_axes_x_y_intersection_ratio(frame, foot_position, keypoints, draw=True):
 
     # Vérification que la personne est dans le cadre
     vect_pers = (foot_position[0] - kp_hl[0], foot_position[1] - kp_hl[1])
-    if np.dot(dir_up, vect_pers) < 0 and np.dot(dir_left, vect_pers) < 0:
+    if not is_between_vectors(dir_up, dir_left, vect_pers):
         return None, None
 
     # Détection des intersections avec les segments du cadre
