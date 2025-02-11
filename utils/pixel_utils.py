@@ -133,43 +133,45 @@ def intersection_droites_parametriques(p1, v1, p2, v2):
 
     return (intersection_x, intersection_y)
 
-def get_axes_x_y_intersection_ratio(frame, foot_position, keypoints, print=True):
+def get_axes_x_y_intersection_ratio(frame, foot_position, keypoints, draw=True):
+    # Définition des points clés
+    kp_hl, kp_hr, kp_br, kp_bl = (keypoints[0:2], keypoints[2:4], keypoints[4:6], keypoints[6:8])
     dir_down, dir_up, dir_left, dir_right = get_axes_direct(keypoints)
-    kp_hl=(keypoints[0], keypoints[1])
-    kp_hr=(keypoints[2], keypoints[3])
-    kp_br=(keypoints[4], keypoints[5])
-    kp_bl=(keypoints[6], keypoints[7])
 
-    #axes de perspectives
-    intery = intersection_droites_parametriques(kp_hl, dir_left, kp_hr, dir_right)
-    interx = intersection_droites_parametriques(kp_hl, dir_up, kp_bl, dir_down)
-    vecty = normalize((intery[0]-foot_position[0], intery[1]-foot_position[1]))
-    vectx = normalize((interx[0]-foot_position[0], interx[1]-foot_position[1]))
+    # Calcul des intersections des axes de perspective
+    inter_y = intersection_droites_parametriques(kp_hl, dir_left, kp_hr, dir_right)
+    inter_x = intersection_droites_parametriques(kp_hl, dir_up, kp_bl, dir_down)
 
-    ratioh = None
-    ratiov = None
-    if (interx and intery) is not None:
-        if print:
-            a1=int(foot_position[0]-interx[0])
-            a2=int(foot_position[1]-interx[1])
-            b1 = int(foot_position[0] - intery[0])
-            b2 = int(foot_position[1] - intery[1])
-            amp=5
-            cv2.line(frame, (int(interx[0]), int(interx[1])), (int(foot_position[0]+a1*amp), int(foot_position[1])+a2*amp), (255, 255, 255),
-                     1)
-            cv2.line(frame, (int(intery[0]), int(intery[1])), (int(foot_position[0]+b1*amp), int(foot_position[1]+b2*amp)),
+    if inter_x is None or inter_y is None:
+        return None, None
+
+    # Vecteurs normalisés des intersections vers la position des pieds
+    vect_y = normalize((inter_y[0] - foot_position[0], inter_y[1] - foot_position[1]))
+    vect_x = normalize((inter_x[0] - foot_position[0], inter_x[1] - foot_position[1]))
+
+    # Option de dessin des lignes de perspective
+    if draw:
+        for inter, vect in [(inter_x, vect_x), (inter_y, vect_y)]:
+            dx, dy = int(foot_position[0] - inter[0]), int(foot_position[1] - inter[1])
+            cv2.line(frame, (int(inter[0]), int(inter[1])),
+                     (int(foot_position[0] + dx * 5), int(foot_position[1] + dy * 5)),
                      (255, 255, 255), 1)
 
-        # on verifie que la personne soit dans le cadre
-        vect_pers = (foot_position[0]-kp_hl[0], foot_position[1]-kp_hl[1])
-        if not np.dot(dir_up, vect_pers) < 0 or not np.dot(dir_left, vect_pers) < 0:
-            # on regarde les intesect de ces axes avec les segments
-            intery_left = detect_intersection_seg_vect(interx, vectx, kp_hl, kp_bl)
-            interx_up = detect_intersection_seg_vect(intery, vecty, kp_hl, kp_hr)
+    # Vérification que la personne est dans le cadre
+    vect_pers = (foot_position[0] - kp_hl[0], foot_position[1] - kp_hl[1])
+    if np.dot(dir_up, vect_pers) < 0 and np.dot(dir_left, vect_pers) < 0:
+        return None, None
 
-            Ox = get_distance_from_origin(kp_hl, interx_up)
-            Oy = get_distance_from_origin(kp_hl, intery_left)
-            up, right, down, left = get_segs_norms(keypoints)
-            ratioh = Ox / up
-            ratiov = Oy / left
-    return ratioh, ratiov
+    # Détection des intersections avec les segments du cadre
+    inter_y_left = detect_intersection_seg_vect(inter_x, vect_x, kp_hl, kp_bl)
+    inter_x_up = detect_intersection_seg_vect(inter_y, vect_y, kp_hl, kp_hr)
+
+    # Calcul des ratios horizontaux et verticaux
+    Ox = get_distance_from_origin(kp_hl, inter_x_up)
+    Oy = get_distance_from_origin(kp_hl, inter_y_left)
+    up, right, down, left = get_segs_norms(keypoints)
+
+    ratio_h = Ox / up if up else None
+    ratio_v = Oy / left if left else None
+
+    return ratio_h, ratio_v

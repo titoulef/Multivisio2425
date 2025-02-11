@@ -3,7 +3,7 @@ import multivisio
 import cv2
 
 def main():
-    input_video_path1 = ('input_videos/hall3.mp4')
+    input_video_path1 = ('input_videos/hall2.mp4')
     input_video_path2 = ('input_videos/hall2.mp4')
     #show
     multivisio.loop(input_video_path1, fpsDivider=5, videoScale=1)

@@ -4,7 +4,7 @@ import numpy as np
 import trackers
 from utils import bbox_utils, get_distance
 from mini_map import MiniMap, MapDetector
-from utils.bbox_utils import bbox_covering, valisePersonne
+from utils.bbox_utils import bbox_covering, drawBBOX, associate_objects
 from personn import Population
 
 def mouse_callback(event, x, y, flags, param):
@@ -46,7 +46,8 @@ def loop( input_video_path, fpsDivider, videoScale):
 
 
             #draw bounding boxes
-            lien_dict = valisePersonne(frame, player_detection_dict, suitcase_detection_dict, population)
+            lien_dict = associate_objects(player_detection_dict, suitcase_detection_dict)
+            drawBBOX(frame, player_detection_dict, suitcase_detection_dict)
 
             # Convert bounding boxes to map coordinates
             player_mini_map_detections, suitcase_mini_map_detections = mini_map.convert_bounding_boxes_to_map_coordinates(
@@ -65,6 +66,8 @@ def loop( input_video_path, fpsDivider, videoScale):
 
     cameraIP.release()
     cv2.destroyAllWindows()
+
+
 
 def loop2(input_video_path1, input_video_path2, fpsDivider, videoScale):
     cameraIP1 = cv2.VideoCapture(input_video_path1)

@@ -72,46 +72,35 @@ def bbox_covering(bbox1, bbox2, threshold=0.05, type='center'):
         else:
             return True
 
-def valisePersonne(frame, player_dict, suitcase_dict, population):
+def draw_tracked_object(frame, track_id, bbox, color, drawn_bboxes):
+    if track_id not in drawn_bboxes:
+        draw_bboxes_stream(frame, track_id, bbox, color)
+        drawn_bboxes.add(track_id)
+
+
+def associate_objects(player_dict, suitcase_dict):
     lien_dict = {}
-    drawn_bboxes = set()  # Ensemble pour suivre les bboxes déjà dessinées
-    for track_id, data in player_dict.items():
-        bbox1 = data['bbox']
-        color = data['color']
-        linked = False  # Flag pour savoir si on a associé un joueur à une valise
-
-        for track_id2, bbox2 in suitcase_dict.items():
+    for player_id, player_data in player_dict.items():
+        bbox1 = player_data['bbox']
+        for suitcase_id, bbox2 in suitcase_dict.items():
             if bbox_covering(bbox1, bbox2, type='center'):
-                lien_dict[track_id2] = track_id
-                # Dessin des bboxes si elles ne l'ont pas encore été
-                if track_id not in drawn_bboxes:
-                    #pers = Personn(track_id, bbox1, frame, color)
-                    #population.addPerson(pers)
-
-                    draw_bboxes_stream(frame, track_id, bbox1, color)
-                    drawn_bboxes.add(track_id)
-                if track_id2 not in drawn_bboxes:
-                    draw_bboxes_stream(frame, track_id2, bbox2, color)
-                    drawn_bboxes.add(track_id2)
-
-                linked = True  # Un lien a été trouvé
-                break  # On arrête la recherche pour ce joueur
-
-        # Si aucun lien trouvé, dessiner en blanc
-        if not linked:
-            if track_id not in drawn_bboxes:
-                #population.addPerson(Personn(track_id, bbox1, frame, color))
-                draw_bboxes_stream(frame, track_id, bbox1, (255, 255, 255))
-                drawn_bboxes.add(track_id)
-
-    # Dessiner les valises non associées
-
-    for track_id2, bbox2 in suitcase_dict.items():
-        if track_id2 not in drawn_bboxes:
-            draw_bboxes_stream(frame, track_id2, bbox2, (255, 255, 255))
-            drawn_bboxes.add(track_id2)
-
+                lien_dict[suitcase_id] = player_id
+                break  # Stop after first association
     return lien_dict
+
+
+def drawBBOX(frame, player_dict, suitcase_dict):
+    lien_dict = associate_objects(player_dict, suitcase_dict)
+    drawn_bboxes = set()
+
+    for player_id, player_data in player_dict.items():
+        bbox = player_data['bbox']
+        color = player_data['color'] if player_id in lien_dict.values() else (255, 255, 255)
+        draw_tracked_object(frame, player_id, bbox, color, drawn_bboxes)
+
+    for suitcase_id, bbox in suitcase_dict.items():
+        color = player_dict[lien_dict[suitcase_id]]['color'] if suitcase_id in lien_dict else (255, 255, 255)
+        draw_tracked_object(frame, suitcase_id, bbox, color, drawn_bboxes)
 
 
 def snapshop(frame, bbox, ID):
